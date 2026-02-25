@@ -100,7 +100,7 @@ const App = () => {
       ],
       patrimonio: fgtsAnual
     };
-  }, [cltBrutoNumber]);
+  }, [cltBruto]);
 
 
   // Cálculo PJ Dinâmico
@@ -125,7 +125,7 @@ const App = () => {
         { label: 'Custos Operacionais', value: -totalGastosFixos },
       ]
     };
-  }, [pjBrutoNumber, gastosFixos]);
+  }, [pjBruto, gastosFixos]);
 
   const diferencaAnual = pjCalculos.anual - cltCalculos.anual;
   const isPjBetter = diferencaAnual > 0;
