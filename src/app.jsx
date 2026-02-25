@@ -75,16 +75,17 @@ const App = () => {
 
   // Cálculo CLT com impostos dinâmicos
   const cltCalculos = useMemo(() => {
-    const inss = calcularINSS(cltBruto);
-    const irrf = calcularIRRF(cltBruto, inss);
-    const liquidoMensal = cltBruto - inss - irrf;
+    const cltBrutoNumber = Number(cltBruto);
+    const inss = calcularINSS(cltBrutoNumber);
+    const irrf = calcularIRRF(cltBrutoNumber, inss);
+    const liquidoMensal = cltBrutoNumber - inss - irrf;
     
     // Benefícios e provisões anuais
     // Para simplificar, 13º e férias são calculados sobre o líquido, o que é uma aproximação.
     const decimoTerceiro = liquidoMensal;
     const feriasTerco = liquidoMensal / 3;
-    const plrEstimada = cltBruto * 1; // Estimativa de 1 salário bruto
-    const fgtsAnual = (cltBruto * 0.08) * 12;
+    const plrEstimada = cltBrutoNumber * 1; // Estimativa de 1 salário bruto
+    const fgtsAnual = (cltBrutoNumber * 0.08) * 12;
 
     const totalAnualLiquido = (liquidoMensal * 12) + decimoTerceiro + feriasTerco + plrEstimada;
     
@@ -99,14 +100,15 @@ const App = () => {
       ],
       patrimonio: fgtsAnual
     };
-  }, [cltBruto]);
+  }, [cltBrutoNumber]);
 
 
   // Cálculo PJ Dinâmico
   const pjCalculos = useMemo(() => {
     // Alíquota média (pode variar de 6% a 15% dependendo do fator R, usamos 11% conforme imagem)
-    const impostoPj = pjBruto * 0.11;
-    const liquidoBrutoPj = pjBruto - impostoPj;
+    const pjBrutoNumber = Number(pjBruto);
+    const impostoPj = pjBrutoNumber * 0.11;
+    const liquidoBrutoPj = pjBrutoNumber - impostoPj;
     
     const totalGastosFixos = gastosFixos.planoSaude + gastosFixos.valeRefeicao + gastosFixos.contador;
     const realLiquidoMensal = liquidoBrutoPj - totalGastosFixos;
@@ -118,12 +120,12 @@ const App = () => {
       imposto: impostoPj,
       gastos: totalGastosFixos,
       detalhes: [
-        { label: 'Faturamento Bruto', value: pjBruto },
+        { label: 'Faturamento Bruto', value: pjBrutoNumber },
         { label: 'Imposto Est. (11%)', value: -impostoPj },
         { label: 'Custos Operacionais', value: -totalGastosFixos },
       ]
     };
-  }, [pjBruto, gastosFixos]);
+  }, [pjBrutoNumber, gastosFixos]);
 
   const diferencaAnual = pjCalculos.anual - cltCalculos.anual;
   const isPjBetter = diferencaAnual > 0;
@@ -149,7 +151,7 @@ const App = () => {
               <input 
                 type="number" 
                 value={cltBruto} 
-                onChange={(e) => setCltBruto(Number(e.target.value))}
+                onChange={(e) => setCltBruto(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white w-32 focus:border-purple-500 outline-none transition-colors"
               />
             </div>
@@ -158,7 +160,7 @@ const App = () => {
               <input 
                 type="number" 
                 value={pjBruto} 
-                onChange={(e) => setPjBruto(Number(e.target.value))}
+                onChange={(e) => setPjBruto(e.target.value)}
                 className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white w-32 focus:border-cyan-500 outline-none transition-colors"
               />
             </div>
@@ -186,7 +188,7 @@ const App = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
            <div className="bg-slate-900 border border-slate-800 p-4 rounded-xl">
               <div className="flex items-center gap-2 mb-3 text-rose-400 font-medium text-sm">
-                <HeartPulse size={16} /> Saúde (Recife)
+                <HeartPulse size={16} /> Saúde (Para uma pessoa de 25 anos)
               </div>
               <input 
                 type="range" min="0" max="2000" step="50"
