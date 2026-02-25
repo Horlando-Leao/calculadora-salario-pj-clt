@@ -12,6 +12,52 @@ import {
   DollarSign
 } from 'lucide-react';
 
+
+// Funções de cálculo de impostos CLT (2024)
+const calcularINSS = (salarioBruto) => {
+  if (salarioBruto <= 0) return 0;
+
+  // Tabela de contribuição progressiva do INSS 2024
+  let inss = 0;
+  if (salarioBruto <= 1412.00) {
+    inss = salarioBruto * 0.075;
+  } else if (salarioBruto <= 2666.68) {
+    inss = (1412.00 * 0.075) + ((salarioBruto - 1412.00) * 0.09);
+  } else if (salarioBruto <= 4000.03) {
+    inss = (1412.00 * 0.075) + ((2666.68 - 1412.00) * 0.09) + ((salarioBruto - 2666.68) * 0.12);
+  } else if (salarioBruto <= 7786.02) {
+    inss = (1412.00 * 0.075) + ((2666.68 - 1412.00) * 0.09) + ((4000.03 - 2666.68) * 0.12) + ((salarioBruto - 4000.03) * 0.14);
+  } else {
+    // Para salários acima do teto, a contribuição é fixa no teto do INSS (R$ 908,85 em 2024)
+    inss = 908.85; 
+  }
+  return inss;
+};
+
+const calcularIRRF = (salarioBruto, inss) => {
+  if (salarioBruto <= 0) return 0;
+
+  // Base de cálculo = Salário Bruto - Contribuição INSS (sem dependentes)
+  const baseCalculo = salarioBruto - inss;
+  let irrf = 0;
+
+  // Tabela IRRF 2024
+  if (baseCalculo <= 2259.20) {
+    irrf = 0;
+  } else if (baseCalculo <= 2826.65) {
+    irrf = (baseCalculo * 0.075) - 169.44;
+  } else if (baseCalculo <= 3751.05) {
+    irrf = (baseCalculo * 0.15) - 381.44;
+  } else if (baseCalculo <= 4664.68) {
+    irrf = (baseCalculo * 0.225) - 662.77;
+  } else {
+    irrf = (baseCalculo * 0.275) - 896.00;
+  }
+
+  return Math.max(irrf, 0); // Garante que o imposto não seja negativo
+};
+
+
 const App = () => {
   // Estados Dinâmicos
   const [cltBruto, setCltBruto] = useState(7500);
@@ -27,16 +73,17 @@ const App = () => {
     setGastosFixos(prev => ({ ...prev, [field]: Number(value) }));
   };
 
-  // Cálculo CLT Baseado na Imagem e Leis Brasileiras
+  // Cálculo CLT com impostos dinâmicos
   const cltCalculos = useMemo(() => {
-    // Estimativa de descontos (INSS/IRRF) para chegar no líquido aproximado
-    // Para simplificar e manter fidelidade à imagem enviada:
-    const taxaLiquido = 7032.09 / 7500; 
-    const liquidoMensal = cltBruto * taxaLiquido;
+    const inss = calcularINSS(cltBruto);
+    const irrf = calcularIRRF(cltBruto, inss);
+    const liquidoMensal = cltBruto - inss - irrf;
     
+    // Benefícios e provisões anuais
+    // Para simplificar, 13º e férias são calculados sobre o líquido, o que é uma aproximação.
     const decimoTerceiro = liquidoMensal;
     const feriasTerco = liquidoMensal / 3;
-    const plrEstimada = cltBruto * 1; 
+    const plrEstimada = cltBruto * 1; // Estimativa de 1 salário bruto
     const fgtsAnual = (cltBruto * 0.08) * 12;
 
     const totalAnualLiquido = (liquidoMensal * 12) + decimoTerceiro + feriasTerco + plrEstimada;
@@ -45,14 +92,15 @@ const App = () => {
       mensal: liquidoMensal,
       anual: totalAnualLiquido,
       detalhes: [
-        { label: 'Salário Líquido Est.', value: liquidoMensal },
-        { label: '13º Salário', value: decimoTerceiro },
-        { label: '1/3 Férias', value: feriasTerco },
-        { label: 'PLR (1 sal.)', value: plrEstimada },
+        { label: 'Salário Líquido (após INSS/IRRF)', value: liquidoMensal },
+        { label: '13º Salário (est.)', value: decimoTerceiro },
+        { label: '1/3 Férias (est.)', value: feriasTerco },
+        { label: 'PLR (est. 1 sal.)', value: plrEstimada },
       ],
       patrimonio: fgtsAnual
     };
   }, [cltBruto]);
+
 
   // Cálculo PJ Dinâmico
   const pjCalculos = useMemo(() => {
@@ -261,7 +309,7 @@ const App = () => {
             </h4>
             <p className="text-sm text-slate-400 leading-relaxed">
               Diferente da CLT, o PJ não paga quando você para. Se quiser tirar 30 dias de férias (faturamento zero no mês), seu balanço anual real cai para <span className="text-white font-bold">{formatCurrency(pjCalculos.anual - (pjBruto - pjCalculos.imposto))}</span>. 
-              Como Arquiteto de Soluções AWS, lembre-se que seu conhecimento vale mais: em negociações PJ, tente sempre atingir o <strong>multiplicador de 1.8x a 2.0x</strong> sobre o bruto CLT para valer o risco.
+              Como Desenvolvedor, lembre-se que seu conhecimento vale mais: em negociações PJ, tente sempre atingir o <strong>multiplicador de 1.8x a 2.0x</strong> sobre o bruto CLT para valer o risco.
             </p>
           </div>
         </div>
